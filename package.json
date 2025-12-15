@@ -3,6 +3,13 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "aoc": "./index.ts"
+  },
+  "scripts": {
+    "aoc": "bun index.ts",
+    "new-day": "bun scripts/new-day.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
