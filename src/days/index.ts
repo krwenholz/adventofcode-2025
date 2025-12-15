@@ -10,9 +10,7 @@ for await (const file of glob.scan(daysDir)) {
   const module = await import(`./${file}`);
   // Find the exported Day class (e.g., Day01, Day02, etc.)
   const DayClass = Object.values(module).find(
-    (exp): exp is new () => Day =>
-      typeof exp === "function" &&
-      exp.prototype instanceof Day
+    (exp): exp is new () => Day => typeof exp === "function" && exp.prototype instanceof Day
   );
   if (DayClass) {
     days.push(new DayClass());

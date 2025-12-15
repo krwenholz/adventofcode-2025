@@ -8,10 +8,18 @@
   },
   "scripts": {
     "aoc": "bun index.ts",
-    "new-day": "bun scripts/new-day.ts"
+    "new-day": "bun scripts/new-day.ts",
+    "test": "bun test",
+    "lint": "eslint --fix .",
+    "format": "prettier --write ."
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4"
   },
   "peerDependencies": {
     "typescript": "^5"
