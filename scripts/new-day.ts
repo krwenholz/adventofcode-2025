@@ -53,7 +53,4 @@ if (!(await existingInput.exists())) {
 console.log(`\nNext steps:`);
 console.log(`1. Add your puzzle input to ${inputFile}`);
 console.log(`2. Implement the solution in ${dayFile}`);
-console.log(`3. Register the day in src/days/index.ts:`);
-console.log(`   import { Day${paddedDay} } from "./day${paddedDay}";`);
-console.log(`   export const days = [..., new Day${paddedDay}()];`);
-console.log(`4. Run with: bun run aoc day${dayNum} 1`);
+console.log(`3. Run with: bun run aoc day${dayNum} 1`);
