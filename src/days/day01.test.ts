@@ -5,18 +5,30 @@ describe("Day 1", () => {
   const day = new Day01();
 
   test("part one", () => {
-    const input = `hello
-world`;
+    const input = `L68
+L30
+R48
+L5
+R60
+L55
+L1
+L99
+R14
+L82`;
     const result = day.partOne(input);
-    // Update this test when you implement the solution
-    expect(result).toBe("Not implemented");
+    expect(result).toBe("3");
+  });
+
+  test("part one three digits", () => {
+    const input = `R250`;
+    const result = day.partOne(input);
+    expect(result).toBe("1");
   });
 
   test("part two", () => {
     const input = `hello
 world`;
     const result = day.partTwo(input);
-    // Update this test when you implement the solution
     expect(result).toBe("Not implemented");
   });
 });

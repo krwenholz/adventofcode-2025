@@ -1,7 +1,7 @@
 import { Glob } from "bun";
 import { Day } from "../day";
 
-const glob = new Glob("day*.ts");
+const glob = new Glob("day[0-9][0-9].ts");
 const daysDir = import.meta.dir;
 
 export const days: Day[] = [];
