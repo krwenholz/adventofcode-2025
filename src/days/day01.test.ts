@@ -26,9 +26,24 @@ L82`;
   });
 
   test("part two", () => {
-    const input = `hello
-world`;
+    const input = `L68
+L30
+R48
+L5
+R60
+L55
+L1
+L99
+R14
+L82`;
     const result = day.partTwo(input);
-    expect(result).toBe("Not implemented");
+    expect(result).toBe("6");
+  });
+
+  test("part two three digits", () => {
+    const input = `R49
+R300`;
+    const result = day.partTwo(input);
+    expect(result).toBe("3");
   });
 });
