@@ -42,14 +42,14 @@ describe("Day ${dayNum}", () => {
   test("part one", () => {
     const input = "";
     const result = day.partOne(input);
-    // Update with expected result from example
+    // TODO: Update with expected result from example
     expect(result).toBe("Not implemented");
   });
 
   test("part two", () => {
     const input = "";
     const result = day.partTwo(input);
-    // Update with expected result from example
+    // TODO: Update with expected result from example
     expect(result).toBe("Not implemented");
   });
 });
