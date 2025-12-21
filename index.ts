@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { days } from "./src/days";
+import { setVerbose } from "./src/logger";
 
 const banner = `
 ❄️  ❄️  ❄️  ❄️  ❄️  ❄️  ❄️  ❄️  ❄️  ❄️
@@ -14,7 +15,9 @@ const program = new Command()
   .name("aoc")
   .description("Advent of Code 2025 solutions")
   .version("1.0.0")
-  .hook("preAction", () => {
+  .option("-v, --verbose", "Enable debug logging")
+  .hook("preAction", (thisCommand) => {
+    setVerbose(thisCommand.opts().verbose ?? false);
     console.log(banner);
   });
 
