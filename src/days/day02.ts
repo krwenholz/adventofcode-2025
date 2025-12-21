@@ -36,7 +36,7 @@ function isSymmetric(id: string): boolean {
 
 export class Day02 extends Day {
   day = 2;
-  name = "TODO: Add puzzle name";
+  name = "Gift Shop";
 
   /**
    * We need to find symmetric IDs in the range and sum them.

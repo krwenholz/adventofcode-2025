@@ -16,8 +16,16 @@ export abstract class Day {
       .option("-i, --input <path>", "Input file path", inputDefault)
       .action(async (part: string, options: { input: string }) => {
         const input = await Bun.file(options.input).text();
+
+        const start = performance.now();
         const result = part === "1" ? this.partOne(input) : this.partTwo(input);
-        console.log(`Day ${this.day} Part ${part}: ${result}`);
+        const elapsed = performance.now() - start;
+
+        console.log(`📅  Day ${this.day}: ${this.name} (Part ${part})`);
+        console.log("━".repeat(36));
+        console.log(`⏱️  ${elapsed.toFixed(3)} ms`);
+        console.log(`🎁  ${result}`);
+        console.log();
       });
   }
 }
