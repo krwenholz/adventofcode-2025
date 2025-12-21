@@ -6,18 +6,43 @@ type ID = {
 };
 
 type Range = {
-  start: ID;
-  end: ID;
+  start: string;
+  end: string;
 };
 
-function isSymmetric(id: ID): bool {
-  return false;
+const SYMMETRIES = new Map<string, boolean>();
+
+function isSymmetric(id: string): boolean {
+  if (SYMMETRIES.has(id)) {
+    return SYMMETRIES.get(id)!;
+  }
+
+  if (id.length % 2 != 0) {
+    SYMMETRIES.set(id, false);
+    return false;
+  }
+
+  const half = id.length / 2;
+  for (let i = 0; i < half; i++) {
+    if (id[i] != id[half + i]) {
+      SYMMETRIES.set(id, false);
+      return false;
+    }
+  }
+
+  SYMMETRIES.set(id, true);
+  return true;
 }
 
 export class Day02 extends Day {
   day = 2;
   name = "TODO: Add puzzle name";
 
+  /**
+   * We need to find symmetric IDs in the range and sum them.
+   * Use the start and end as both numbers and strings, avoid swapping back and forth with types.
+   * Everything is a str until the end. And memoize whether a number is symmetric or not.
+   */
   partOne(input: string): string | number {
     const rangeStrs = input.trim().split(",");
     const ranges: Range[] = [];
@@ -28,18 +53,26 @@ export class Day02 extends Day {
         start = start || "";
         end = end || "";
         ranges.push({
-          start: { len: start.length, val: Number(start) },
-          end: { len: end.length, val: Number(end) },
+          start,
+          end,
         });
       } else {
         throw new Error(`Unmatched ${r}`);
       }
     }
 
-    const filtered = ranges.filter((r) => isSymmetric(r.start) && isSymmetric(r.end));
-
-    ranges.map((r) => console.log(r));
-    return "Not implemented";
+    return (
+      "" +
+      ranges
+        .map((r) => {
+          var invalidSum = 0;
+          for (let val = Number(r.start); val <= Number(r.end); val++) {
+            invalidSum += isSymmetric(val.toString()) ? val : 0;
+          }
+          return invalidSum;
+        })
+        .reduce((p, c, _) => p + c)
+    );
   }
 
   partTwo(input: string): string | number {
