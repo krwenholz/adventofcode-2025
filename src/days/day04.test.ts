@@ -20,9 +20,17 @@ describe("Day 4", () => {
   });
 
   test("part two", () => {
-    const input = "";
+    const input = `..@@.@@@@.
+@@@.@.@.@@
+@@@@@.@.@@
+@.@@@@..@.
+@@.@@@@.@@
+.@@@@@@@.@
+.@.@.@.@@@
+@.@@@.@@@@
+.@@@@@@@@.
+@.@.@@@.@.`;
     const result = day.partTwo(input);
-    // TODO: Update with expected result from example
-    expect(result).toBe("Not implemented");
+    expect(result).toBe("43");
   });
 });
