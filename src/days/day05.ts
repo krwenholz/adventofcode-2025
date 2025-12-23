@@ -1,4 +1,5 @@
 import { Day } from "../day";
+import logger from "../logger";
 
 export class Day05 extends Day {
   day = 5;
@@ -13,29 +14,36 @@ export class Day05 extends Day {
      *
      * Let's start with a naive implementation that expands the ranges into entries in a set.
      * The Number call will be kinda expensive, but meh.
+     * - lol OOM on the full input
+     *
+     * I still like my implementation, but what if we did it in reverse? We could collect the ingredients in a set then iterate over ranges?
+     * We'll duplicate work on overlapping ranges, but we won't OOM.
      */
-    const freshIngredients: Set<number> = new Set();
-    let i = 0;
-    for (; i < _lines.length; i++) {
-      const line = _lines[i]!;
-      if (line.trim() === "") {
-        i++;
+    const ingredients: Set<number> = new Set();
+    let i = _lines.length - 1;
+    for (; i >= 0; i--) {
+      const ingredientLine = _lines[i]!;
+      if (ingredientLine.trim() === "") {
+        i--;
         break;
       }
+      const ingredient = Number(ingredientLine.trim());
+      ingredients.add(ingredient);
+    }
+
+    logger.info(`Collected ${ingredients.size} ingredients`);
+
+    let count = 0;
+    for (; i >= 0; i--) {
+      const line = _lines[i]!;
       const [startStr, endStr] = line.split("-");
       const start = Number(startStr);
       const end = Number(endStr);
       for (let n = start; n <= end; n++) {
-        freshIngredients.add(n);
-      }
-    }
-
-    let count = 0;
-    for (; i < _lines.length; i++) {
-      const ingredientLine = _lines[i]!;
-      const ingredient = Number(ingredientLine.trim());
-      if (freshIngredients.has(ingredient)) {
-        count++;
+        if (ingredients.has(n)) {
+          count++;
+          ingredients.delete(n); // avoid double counting
+        }
       }
     }
 
