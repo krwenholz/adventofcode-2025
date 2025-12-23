@@ -1,4 +1,5 @@
 import { Day } from "../day";
+import IntervalTree from "@flatten-js/interval-tree";
 import logger from "../logger";
 
 export class Day05 extends Day {
@@ -18,36 +19,44 @@ export class Day05 extends Day {
      *
      * I still like my implementation, but what if we did it in reverse? We could collect the ingredients in a set then iterate over ranges?
      * We'll duplicate work on overlapping ranges, but we won't OOM.
+     * - never finishes!
+     *
+     * I think expanding and traversing the ranges is too much.
+     * Instead, let's build an interesting structure! A binary search tree seems kind of right?
+     * I did some research and this is called a range tree (segment tree and Fenwick tree are similar).
+     * I don't want to implement one myself.
+     *
+     * Okay new thing. I learned about [interval trees](https://en.wikipedia.org/wiki/Interval_tree).
+     * There's a node lib for this (for graphics!) that should help me make faster queries. I'm not sure
+     * if I can define an interval of size one, but we'll try it out.
      */
-    const ingredients: Set<number> = new Set();
-    let i = _lines.length - 1;
-    for (; i >= 0; i--) {
-      const ingredientLine = _lines[i]!;
-      if (ingredientLine.trim() === "") {
-        i--;
-        break;
+    const breakIdx = _lines.findIndex((line) => {
+      if (line.trim() === "") {
+        return true;
       }
-      const ingredient = Number(ingredientLine.trim());
-      ingredients.add(ingredient);
-    }
+    });
+    const freshRanges: Array<[number, number]> = _lines.slice(0, breakIdx).map((line) => {
+      const range = line.split("-").map((n) => Number(n.trim()));
+      return [range[0]!, range[1]!];
+    });
+    const freshTree = new IntervalTree<string>();
+    freshRanges.forEach(([start, end], i) => {
+      freshTree.insert([start, end], `range-${start}-${end}`);
+    });
 
-    logger.info(`Collected ${ingredients.size} ingredients`);
-
-    let count = 0;
-    for (; i >= 0; i--) {
-      const line = _lines[i]!;
-      const [startStr, endStr] = line.split("-");
-      const start = Number(startStr);
-      const end = Number(endStr);
-      for (let n = start; n <= end; n++) {
-        if (ingredients.has(n)) {
-          count++;
-          ingredients.delete(n); // avoid double counting
-        }
-      }
-    }
-
-    return `${count}`;
+    return (
+      "" +
+      _lines.slice(breakIdx + 1).reduce((count, line) => {
+        const ingredient = Number(line.trim());
+        //const results = freshTree.search([ingredient, ingredient]);
+        //if (results.length > 0) {
+        //  return count + 1;
+        //}
+        //return count;
+        // intersect_any is about 1/2 ms faster than search on my full puzzle input (at about 2.5ms total 😅)
+        return count + (freshTree.intersect_any([ingredient, ingredient]) ? 1 : 0);
+      }, 0)
+    );
   }
 
   partTwo(input: string): string | number {
