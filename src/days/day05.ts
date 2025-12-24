@@ -1,6 +1,7 @@
 import { Day } from "../day";
 import IntervalTree from "@flatten-js/interval-tree";
 import logger from "../logger";
+import { stringify } from "superjson";
 
 export class Day05 extends Day {
   day = 5;
@@ -61,7 +62,47 @@ export class Day05 extends Day {
 
   partTwo(input: string): string | number {
     const _lines = input.trim().split("\n");
-    // TODO: Implement part two
-    return "Not implemented";
+    // So now we just have to expand the ranges and count the totals.
+    // We'll OOM, as before if we do that, but what if we use our interval tree?
+    // Before insertion we can check for any ranges with overlap and reduce the size of the one we're about to insert?
+    // Then only insert non-overlapping ranges, and finally count the total size of ranges in the tree.
+    const breakIdx = _lines.findIndex((line) => {
+      if (line.trim() === "") {
+        return true;
+      }
+    });
+    const freshRanges: Array<[number, number]> = _lines.slice(0, breakIdx).map((line) => {
+      const range = line.split("-").map((n) => Number(n.trim()));
+      return [range[0]!, range[1]!];
+    });
+    freshRanges.sort((a, b) => a[0] - b[0]);
+
+    let totalRange = 0;
+    let curRange: [number, number] | null = null;
+    logger.debug(`Sorted ranges: ${stringify(freshRanges)}`);
+    for (let i = 0; i < freshRanges.length; i++) {
+      const [start, end] = freshRanges[i]!;
+      // if we have an active range, see if we overlap
+      // if we do, extend the active range and continue
+      // otherwise, add the active range to total and start a new one
+      if (curRange) {
+        if (start <= curRange[1]) {
+          // overlap
+          if (end > curRange[1]) {
+            // extend
+            curRange[1] = end;
+          }
+          continue;
+        }
+
+        // no overlap, add current range to total
+        totalRange += curRange[1] - curRange[0] + 1;
+        curRange = null;
+      }
+      curRange = [start, end];
+    }
+    totalRange += curRange![1] - curRange![0] + 1;
+
+    return "" + totalRange;
   }
 }

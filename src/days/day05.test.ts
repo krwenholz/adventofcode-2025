@@ -21,9 +21,18 @@ describe("Day 5", () => {
   });
 
   test("part two", () => {
-    const input = "";
+    const input = `3-5
+10-14
+16-20
+12-18
+
+1
+5
+8
+11
+17
+32`;
     const result = day.partTwo(input);
-    // TODO: Update with expected result from example
-    expect(result).toBe("Not implemented");
+    expect(result).toBe("14");
   });
 });
