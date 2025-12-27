@@ -7,6 +7,11 @@ export class Day06 extends Day {
   name = "Trash Compactor";
 
   partOne(input: string): string | number {
+    /**
+     * Each column has an operator at the bottom, either * or +.
+     * We need to apply that operator to all numbers in that column
+     * and then sum the results of each column. (Where column may be several digits wide.)
+     */
     const _lines = input
       .trim()
       .split("\n")
@@ -38,6 +43,9 @@ export class Day06 extends Day {
   }
 
   partTwo(input: string): string | number {
+    /**
+     * Okay, so now we read the numbers vertically, still organized by column groupings.
+     */
     const _lines = input.split("\n");
     const totalRows = _lines.length;
     const totalCols = _lines[0]!.length;
