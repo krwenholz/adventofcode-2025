@@ -1,21 +1,14 @@
-import { spawnSync } from "bun";
 import { Day } from "../day";
 import logger from "../logger";
 
-type Point = `${number},${number},${number}`;
-type Pair = `${Point}|${Point}`;
-type DistanceMap = Map<Pair, number>;
-const point = (x: number, y: number, z: number): Point => `${x},${y},${z}`;
-const pointsFromPair = (dp: Pair): [Point, Point] => dp.split("|") as [Point, Point];
-const parsePoint = (s: Point): [number, number, number] =>
+type Point = [number, number, number];
+type Pair = [Point, Point];
+const parsePoint = (s: string): [number, number, number] =>
   s.split(",").map((n) => parseInt(n, 10)) as [number, number, number];
 const distance = (a: Point, b: Point): number => {
-  const [ax, ay, az] = parsePoint(a);
-  const [bx, by, bz] = parsePoint(b);
+  const [ax, ay, az] = a;
+  const [bx, by, bz] = b;
   return Math.pow(ax - bx, 2) + Math.pow(ay - by, 2) + Math.pow(az - bz, 2);
-};
-const distanceMapGet = (map: DistanceMap, a: Point, b: Point): number | undefined => {
-  return map.get(`${a}|${b}`) ?? map.get(`${b}|${a}`);
 };
 
 export class Day08 extends Day {
@@ -27,7 +20,7 @@ export class Day08 extends Day {
     const inputPoints = input
       .trim()
       .split("\n")
-      .map((line) => line as Point);
+      .map((line) => parsePoint(line));
     /**
      * Did a bunch of research. We're dealing with a hierarchical distance problem:
      * https://en.wikipedia.org/wiki/Hierarchical_clustering
@@ -53,22 +46,22 @@ export class Day08 extends Day {
      * in a new value, but not high enough.
      *
      * Finally got my correct answer by removing the sqrt call. Key insight was the very close distances. The sqrt was probably rounding
-     * at too low of a precision.
+     * at too low of a precision. Takes 350ms.
+     *
+     * After reviewing with Claude, I reduced our string parsing to cut ~50% of the execution time. Nice! Any faster probably requires a
+     * different algorithm. (Kruskal's MST came up in research.)
      */
     const distancePairs = new Array<[Pair, number]>();
     for (let i = 0; i < inputPoints.length; i++) {
       const p1: Point = inputPoints[i]!;
       for (let j = i + 1; j < inputPoints.length; j++) {
         const p2: Point = inputPoints[j]!;
-        distancePairs.push([`${p1}|${p2}`, distance(p1, p2)]);
+        distancePairs.push([[p1, p2], distance(p1, p2)]);
       }
     }
     distancePairs.sort((a, b) => a[1] - b[1]);
-    //logger.debug(`Computed ${distancePairs.length} distance pairs: ${distancePairs.join(", ")}`);
 
     const clusters = new Map<Point, Set<Point>>();
-    // Maps points to their parent point's cluster
-    const pointToCluster = new Map<Point, Point>();
 
     let pairsUsed = 0;
     for (const [pair, _dist] of distancePairs) {
@@ -78,43 +71,39 @@ export class Day08 extends Day {
 
       pairsUsed++;
 
-      const [p1, p2] = pointsFromPair(pair);
-      const clusterPoint1 = pointToCluster.get(p1);
-      const clusterPoint2 = pointToCluster.get(p2);
-      const cluster1 = clusterPoint1 ? clusters.get(clusterPoint1) : null;
-      const cluster2 = clusterPoint2 ? clusters.get(clusterPoint2) : null;
+      const [p1, p2] = pair;
+      const c1 = clusters.get(p1);
+      const c2 = clusters.get(p2);
 
-      if (clusterPoint1 && clusterPoint2) {
-        if (clusterPoint1 === clusterPoint2) {
+      if (c1 && c2) {
+        if (c1 === c2) {
           // Both points already in same cluster
           continue;
         }
 
         // Merge clusters
-        for (const p of cluster2!) {
-          cluster1!.add(p);
-          pointToCluster.set(p, clusterPoint1);
+        for (const p of c2) {
+          c1.add(p);
+          clusters.set(p, c1);
         }
-        clusters.delete(clusterPoint2);
-      } else if (clusterPoint1) {
-        cluster1!.add(p2);
-        pointToCluster.set(p2, clusterPoint1);
-      } else if (clusterPoint2) {
-        cluster2!.add(p1);
-        pointToCluster.set(p1, clusterPoint2);
+      } else if (c1) {
+        c1.add(p2);
+        clusters.set(p2, c1);
+      } else if (c2) {
+        c2.add(p1);
+        clusters.set(p1, c2);
       } else {
         // Create new cluster
         const newCluster = new Set<Point>([p1, p2]);
         clusters.set(p1, newCluster);
-        pointToCluster.set(p1, p1);
-        pointToCluster.set(p2, p1);
+        clusters.set(p2, newCluster);
       }
     }
 
-    const clusterSizes = Array<number>();
-    clusters.forEach((cluster, _idx) => clusterSizes.push(cluster.size));
+    const uniqueClusters = new Set(clusters.values());
+    const clusterSizes = [...uniqueClusters].map((c) => c.size);
     clusterSizes.sort((a, b) => b - a);
-    logger.info(`Formed ${clusterSizes.length} clusters with ${pairsUsed} pairs used.`);
+    logger.debug(`Formed ${clusterSizes.length} clusters with ${pairsUsed} pairs used.`);
     logger.debug(`Cluster sizes: ${clusterSizes.join(",")}`);
 
     const result = clusterSizes.slice(0, 3).reduce((a, b) => a * b, 1);
