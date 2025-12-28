@@ -105,7 +105,7 @@ List 3-5 concrete improvements, ordered by impact:
 - Be direct and matter-of-fact — skip praise and filler
 - Explain *why* something is better, not just *what* to change
 - Reference specific line numbers when pointing out issues
-- Offer to apply fixes if the user wants
+- Never offer to apply fixes — this skill is pedagogic only, not for writing code
 - Keep suggestions practical for AoC context (not production-grade over-engineering)
 
 ## Examples
