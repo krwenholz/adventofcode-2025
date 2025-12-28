@@ -12,7 +12,7 @@ const parsePoint = (s: Point): [number, number, number] =>
 const distance = (a: Point, b: Point): number => {
   const [ax, ay, az] = parsePoint(a);
   const [bx, by, bz] = parsePoint(b);
-  return Math.sqrt(Math.abs(ax - bx) ^ (2 + Math.abs(ay - by)) ^ (2 + Math.abs(az - bz)) ^ 2);
+  return Math.pow(ax - bx, 2) + Math.pow(ay - by, 2) + Math.pow(az - bz, 2);
 };
 const distanceMapGet = (map: DistanceMap, a: Point, b: Point): number | undefined => {
   return map.get(`${a}|${b}`) ?? map.get(`${b}|${a}`);
@@ -48,7 +48,12 @@ export class Day08 extends Day {
      * 3  Pull correct number of pairs to form clusters
      * Lame, but effective
      *
-     * Working! Mostly. 1000 was too low for my final answer and 16040 also too low.
+     * Working! Mostly. 1000 was too low for my final answer and 16040 also too low. And 19925 is too low ater trying earlier iterations.
+     * I'm noticing seriously tight clusters with nearly identical distances. The comparison had to be changed to just >. This did result
+     * in a new value, but not high enough.
+     *
+     * Finally got my correct answer by removing the sqrt call. Key insight was the very close distances. The sqrt was probably rounding
+     * at too low of a precision.
      */
     const distancePairs = new Array<[Pair, number]>();
     for (let i = 0; i < inputPoints.length; i++) {
@@ -59,6 +64,7 @@ export class Day08 extends Day {
       }
     }
     distancePairs.sort((a, b) => a[1] - b[1]);
+    //logger.debug(`Computed ${distancePairs.length} distance pairs: ${distancePairs.join(", ")}`);
 
     const clusters = new Map<Point, Set<Point>>();
     // Maps points to their parent point's cluster
