@@ -17,10 +17,6 @@ export class Day08 extends Day {
   conns = 1000;
 
   partOne(input: string): string {
-    const inputPoints = input
-      .trim()
-      .split("\n")
-      .map((line) => parsePoint(line));
     /**
      * Did a bunch of research. We're dealing with a hierarchical distance problem:
      * https://en.wikipedia.org/wiki/Hierarchical_clustering
@@ -51,6 +47,11 @@ export class Day08 extends Day {
      * After reviewing with Claude, I reduced our string parsing to cut ~50% of the execution time. Nice! Any faster probably requires a
      * different algorithm. (Kruskal's MST came up in research.)
      */
+    const inputPoints = input
+      .trim()
+      .split("\n")
+      .map((line) => parsePoint(line));
+
     const distancePairs = new Array<[Pair, number]>();
     for (let i = 0; i < inputPoints.length; i++) {
       const p1: Point = inputPoints[i]!;
@@ -112,8 +113,72 @@ export class Day08 extends Day {
   }
 
   partTwo(input: string): string {
-    const _lines = input.trim().split("\n");
-    // TODO: Implement part two
-    return "Not implemented";
+    /**
+     * Mostly the same deal, but we need to connect until everything is in one cluster.
+     * Then take the last connected pair and multiply the x coordinates.
+     *
+     * Gonna start by reusing what I have and cutting off the last bit.
+     */
+    const inputPoints = input
+      .trim()
+      .split("\n")
+      .map((line) => parsePoint(line));
+
+    const distancePairs = new Array<[Pair, number]>();
+    for (let i = 0; i < inputPoints.length; i++) {
+      const p1: Point = inputPoints[i]!;
+      for (let j = i + 1; j < inputPoints.length; j++) {
+        const p2: Point = inputPoints[j]!;
+        distancePairs.push([[p1, p2], distance(p1, p2)]);
+      }
+    }
+    distancePairs.sort((a, b) => a[1] - b[1]);
+
+    const clusters = new Map<Point, Set<Point>>();
+    let largestClusterSize = 0;
+
+    for (const [pair, _dist] of distancePairs) {
+      const [p1, p2] = pair;
+      let c1 = clusters.get(p1);
+      let c2 = clusters.get(p2);
+
+      if (c1 && c2) {
+        if (c1 === c2) {
+          // Both points already in same cluster
+          continue;
+        }
+
+        // Merge clusters
+        for (const p of c2) {
+          c1.add(p);
+          clusters.set(p, c1);
+        }
+      } else if (c1) {
+        c1.add(p2);
+        clusters.set(p2, c1);
+      } else if (c2) {
+        c2.add(p1);
+        clusters.set(p1, c2);
+        c1 = c2;
+      } else {
+        // Create new cluster
+        const newCluster = new Set<Point>([p1, p2]);
+        c1 = newCluster;
+        c2 = newCluster;
+        clusters.set(p1, c1);
+        clusters.set(p2, c2);
+      }
+      if (c1!.size > largestClusterSize) {
+        largestClusterSize = c1!.size;
+      }
+
+      if (largestClusterSize === inputPoints.length) {
+        // All points connected
+        logger.debug(`All points connected with pair ${p1} and ${p2}`);
+        return "" + p1[0] * p2[0];
+      }
+    }
+
+    return "" + 0;
   }
 }
