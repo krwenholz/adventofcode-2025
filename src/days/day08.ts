@@ -2,13 +2,32 @@ import { spawnSync } from "bun";
 import { Day } from "../day";
 import logger from "../logger";
 
+type Point = `${number},${number},${number}`;
+type Pair = `${Point}|${Point}`;
+type DistanceMap = Map<Pair, number>;
+const point = (x: number, y: number, z: number): Point => `${x},${y},${z}`;
+const pointsFromPair = (dp: Pair): [Point, Point] => dp.split("|") as [Point, Point];
+const parsePoint = (s: Point): [number, number, number] =>
+  s.split(",").map((n) => parseInt(n, 10)) as [number, number, number];
+const distance = (a: Point, b: Point): number => {
+  const [ax, ay, az] = parsePoint(a);
+  const [bx, by, bz] = parsePoint(b);
+  return Math.sqrt(Math.abs(ax - bx) ^ (2 + Math.abs(ay - by)) ^ (2 + Math.abs(az - bz)) ^ 2);
+};
+const distanceMapGet = (map: DistanceMap, a: Point, b: Point): number | undefined => {
+  return map.get(`${a}|${b}`) ?? map.get(`${b}|${a}`);
+};
+
 export class Day08 extends Day {
   day = 8;
   name = "Playground";
   conns = 1000;
 
   partOne(input: string): string {
-    const _lines = input.trim().split("\n");
+    const inputPoints = input
+      .trim()
+      .split("\n")
+      .map((line) => line as Point);
     /**
      * Did a bunch of research. We're dealing with a hierarchical distance problem:
      * https://en.wikipedia.org/wiki/Hierarchical_clustering
@@ -25,73 +44,76 @@ export class Day08 extends Day {
      * I misunderstood the cutree concept. Whoops.
      * I suppose if I want to do this myself I will
      * 1. Compute all pairwise distances
-     * 2. Heapsort this shit
+     * 2. Sort this shit
      * 3  Pull correct number of pairs to form clusters
      * Lame, but effective
+     *
+     * Working! Mostly. 1000 was too low for my final answer and 16040 also too low.
      */
-
-    let scipyScript = `
-from scipy import cluster
-from scipy.spatial.distance import pdist
-import numpy as np
-import sys
-import json
-points = [${_lines.map((line) => "(" + line + ")").join(",")}]
-condensed_distance_matrix = pdist(points)
-linkage = cluster.hierarchy.ward(condensed_distance_matrix)
-cutree = cluster.hierarchy.cut_tree(linkage)
-print("Linkage matrix:")
-print(linkage)
-print("Cut tree:")
-print(cutree)
-sys.stderr.write(json.dumps(cutree.tolist()))
-    `;
-    const scriptFileName = `tmp/day08_scipy_${Bun.hash(scipyScript)}.py`;
-
-    Bun.write(scriptFileName, scipyScript);
-
-    const { stdout, stderr, exitCode } = spawnSync(
-      [
-        "docker",
-        "run",
-        "--rm",
-        "-v",
-        `${process.cwd()}:/home/jovyan/`,
-        "jupyter/scipy-notebook",
-        "python",
-        scriptFileName,
-      ],
-      {
-        stdout: "pipe",
-        stderr: "pipe",
+    const distancePairs = new Array<[Pair, number]>();
+    for (let i = 0; i < inputPoints.length; i++) {
+      const p1: Point = inputPoints[i]!;
+      for (let j = i + 1; j < inputPoints.length; j++) {
+        const p2: Point = inputPoints[j]!;
+        distancePairs.push([`${p1}|${p2}`, distance(p1, p2)]);
       }
-    );
-
-    logger.debug(`SciPy stdout: ${stdout.toString()}`);
-    logger.debug(`SciPy stderr: ${stderr.toString()}`);
-    logger.debug(`SciPy exit code: ${exitCode}`);
-
-    const cutree: number[][] = JSON.parse(stderr.toString());
-
-    const ress = new Array<number>();
-    for (let c = 0; c < cutree.length; c++) {
-      const cut = cutree[c]!;
-      const clusters = new Map<number, number>();
-      cut.forEach((clusterId) => {
-        clusters.set(clusterId, (clusters.get(clusterId) ?? 0) + 1);
-      });
-
-      const sizes = new Array<number>();
-      clusters.forEach((size) => {
-        sizes.push(size);
-      });
-      sizes.sort((a, b) => b - a);
-      ress.push(sizes.slice(0, 2).reduce((a, b) => a * b, 1));
-      logger.debug(
-        `Cut ${c}: ${clusters.size} clusters (${sizes.join(", ")}) with product ${ress[c]}`
-      );
     }
-    return "" + ress[this.conns - 1];
+    distancePairs.sort((a, b) => a[1] - b[1]);
+
+    const clusters = new Map<Point, Set<Point>>();
+    // Maps points to their parent point's cluster
+    const pointToCluster = new Map<Point, Point>();
+
+    let pairsUsed = 0;
+    for (const [pair, _dist] of distancePairs) {
+      if (pairsUsed >= this.conns) {
+        break;
+      }
+
+      pairsUsed++;
+
+      const [p1, p2] = pointsFromPair(pair);
+      const clusterPoint1 = pointToCluster.get(p1);
+      const clusterPoint2 = pointToCluster.get(p2);
+      const cluster1 = clusterPoint1 ? clusters.get(clusterPoint1) : null;
+      const cluster2 = clusterPoint2 ? clusters.get(clusterPoint2) : null;
+
+      if (clusterPoint1 && clusterPoint2) {
+        if (clusterPoint1 === clusterPoint2) {
+          // Both points already in same cluster
+          continue;
+        }
+
+        // Merge clusters
+        for (const p of cluster2!) {
+          cluster1!.add(p);
+          pointToCluster.set(p, clusterPoint1);
+        }
+        clusters.delete(clusterPoint2);
+      } else if (clusterPoint1) {
+        cluster1!.add(p2);
+        pointToCluster.set(p2, clusterPoint1);
+      } else if (clusterPoint2) {
+        cluster2!.add(p1);
+        pointToCluster.set(p1, clusterPoint2);
+      } else {
+        // Create new cluster
+        const newCluster = new Set<Point>([p1, p2]);
+        clusters.set(p1, newCluster);
+        pointToCluster.set(p1, p1);
+        pointToCluster.set(p2, p1);
+      }
+    }
+
+    const clusterSizes = Array<number>();
+    clusters.forEach((cluster, _idx) => clusterSizes.push(cluster.size));
+    clusterSizes.sort((a, b) => b - a);
+    logger.info(`Formed ${clusterSizes.length} clusters with ${pairsUsed} pairs used.`);
+    logger.debug(`Cluster sizes: ${clusterSizes.join(",")}`);
+
+    const result = clusterSizes.slice(0, 3).reduce((a, b) => a * b, 1);
+
+    return "" + result;
   }
 
   partTwo(input: string): string {
