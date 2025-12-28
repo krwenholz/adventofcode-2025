@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Let's not share our puzzles
 inputs/*
+
+# Let's have a scratch dir
+tmp/*

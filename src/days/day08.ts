@@ -4,7 +4,8 @@ import logger from "../logger";
 
 export class Day08 extends Day {
   day = 8;
-  name = "TODO: Add puzzle name";
+  name = "Playground";
+  conns = 1000;
 
   partOne(input: string): string {
     const _lines = input.trim().split("\n");
@@ -17,32 +18,45 @@ export class Day08 extends Day {
      * Kind a tricky is how to cap it at 1000 pairs...
      *
      * Okay that failed. Now looking at SciPy, I think I can get the cut I want:
+     * https://docs.scipy.org/doc/scipy/reference/cluster.hierarchy.html
      * https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.cut_tree.html#scipy.cluster.hierarchy.cut_tree
+     *
+     *
+     * I misunderstood the cutree concept. Whoops.
+     * I suppose if I want to do this myself I will
+     * 1. Compute all pairwise distances
+     * 2. Heapsort this shit
+     * 3  Pull correct number of pairs to form clusters
+     * Lame, but effective
      */
 
     let scipyScript = `
 from scipy import cluster
 from scipy.spatial.distance import pdist
 import numpy as np
+import sys
+import json
 points = [${_lines.map((line) => "(" + line + ")").join(",")}]
 condensed_distance_matrix = pdist(points)
 linkage = cluster.hierarchy.ward(condensed_distance_matrix)
-cutree = cluster.hierarchy.cut_tree(linkage, n_clusters=[5, 10])
+cutree = cluster.hierarchy.cut_tree(linkage)
+print("Linkage matrix:")
+print(linkage)
+print("Cut tree:")
 print(cutree)
+sys.stderr.write(json.dumps(cutree.tolist()))
     `;
-    const scriptFileName = `/tmp/day08_scipy_${Bun.hash(scipyScript)}.py`;
+    const scriptFileName = `tmp/day08_scipy_${Bun.hash(scipyScript)}.py`;
 
     Bun.write(scriptFileName, scipyScript);
 
-    let dockerCmd = `docker run -it --rm -v "$(pwd)":/home/jovyan/work jupyter/scipy-notebook python work/your_script.py`;
-
-    const result = spawnSync(
+    const { stdout, stderr, exitCode } = spawnSync(
       [
         "docker",
         "run",
         "--rm",
         "-v",
-        `${process.cwd()}:/home/jovyan/work`,
+        `${process.cwd()}:/home/jovyan/`,
         "jupyter/scipy-notebook",
         "python",
         scriptFileName,
@@ -53,10 +67,31 @@ print(cutree)
       }
     );
 
-    logger.debug(`SciPy stdout: ${result.stdout.toString()}`);
-    logger.debug(`SciPy stderr: ${result.stderr.toString()}`);
-    logger.debug(`SciPy exit code: ${result.exitCode}`);
-    return "Not implemented";
+    logger.debug(`SciPy stdout: ${stdout.toString()}`);
+    logger.debug(`SciPy stderr: ${stderr.toString()}`);
+    logger.debug(`SciPy exit code: ${exitCode}`);
+
+    const cutree: number[][] = JSON.parse(stderr.toString());
+
+    const ress = new Array<number>();
+    for (let c = 0; c < cutree.length; c++) {
+      const cut = cutree[c]!;
+      const clusters = new Map<number, number>();
+      cut.forEach((clusterId) => {
+        clusters.set(clusterId, (clusters.get(clusterId) ?? 0) + 1);
+      });
+
+      const sizes = new Array<number>();
+      clusters.forEach((size) => {
+        sizes.push(size);
+      });
+      sizes.sort((a, b) => b - a);
+      ress.push(sizes.slice(0, 2).reduce((a, b) => a * b, 1));
+      logger.debug(
+        `Cut ${c}: ${clusters.size} clusters (${sizes.join(", ")}) with product ${ress[c]}`
+      );
+    }
+    return "" + ress[this.conns - 1];
   }
 
   partTwo(input: string): string {

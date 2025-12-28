@@ -25,6 +25,7 @@ describe("Day 8", () => {
 862,61,35
 984,92,344
 425,690,689`;
+    day.conns = 10;
     const result = day.partOne(input);
     expect(result).toBe("40");
   });
@@ -32,7 +33,6 @@ describe("Day 8", () => {
   test("part two", () => {
     const input = "";
     const result = day.partTwo(input);
-    // TODO: Update with expected result from example
     expect(result).toBe("Not implemented");
   });
 });
