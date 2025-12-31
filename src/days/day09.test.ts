@@ -18,9 +18,15 @@ describe("Day 9", () => {
   });
 
   test("part two", () => {
-    const input = "";
+    const input = `7,1
+11,1
+11,7
+9,7
+9,5
+2,5
+2,3
+7,3`;
     const result = day.partTwo(input);
-    // TODO: Update with expected result from example
-    expect(result).toBe("Not implemented");
+    expect(result).toBe("24");
   });
 });
